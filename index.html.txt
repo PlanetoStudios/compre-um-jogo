@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compre um Jogo</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#4CAF50">
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f0f0f0; }
+    header { background:#4CAF50; color:white; padding:1rem; text-align:center; }
+    main { padding:1rem; }
+    .shop, .pets, .stats { margin-bottom:2rem; }
+    button { margin:0.2rem; padding:0.5rem 1rem; }
+    .item { display:flex; justify-content:space-between; margin:0.2rem 0; padding:0.5rem; background:white; border-radius:5px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="title">Compre um Jogo</h1>
+    <p>Dinheiro: <span id="money">0</span> | Renda/s: <span id="income">0</span></p>
+  </header>
+  <main>
+    <section class="shop">
+      <h2>Loja</h2>
+      <div id="shop-items"></div>
+    </section>
+
+    <section class="pets">
+      <h2>Pets</h2>
+      <div id="pet-shop"></div>
+    </section>
+
+    <section class="stats">
+      <h2>Estatísticas</h2>
+      <p>Jogos comprados: <span id="bought">0</span></p>
+      <p>Total gasto: <span id="spent">0</span></p>
+    </section>
+  </main>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
