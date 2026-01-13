@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Compre um Jogo</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Load pixel-style font (Minecraft-like) early so it's applied reliably -->
+  <!-- Undertale-like webfont (fallback to Press Start 2P) -->
+  <link href="https://fonts.cdnfonts.com/css/undertale" rel="stylesheet">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1 style="text-shadow:0 0 12px rgba(56,189,999,0.6)" id="title">Compre um Jogo</h1>
+      <div style="display:flex;align-items:center;gap:12px">
+        <select id="langSelect" aria-label="Mudar idioma" style="padding:6px;border-radius:8px;background:rgba(255,255,255,0.03);color:var(--text);border:1px solid rgba(255,255,255,0.06)">
+          <option value="pt">Português (Brasil)</option>
+          <option value="pt-pt">Português (PT)</option>
+          <option value="en">English</option>
+          <option value="de">Deutsch</option>
+        </select>
+        <button class="btn-small" id="switchAccountBtn">Trocar Conta</button>
+      </div>
+    </header>
+
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn-small" id="toggleShop">Abrir Loja</button>
+      <!-- NEW: pet shop toggle button -->
+      <button class="btn-small" id="togglePetShop">Abrir Loja de Pets</button>
+      <!-- NEW: mutation shop toggle button -->
+      <button class="btn-small" id="toggleMutShop">Abrir Loja de Mutação</button>
+      <!-- NEW: settings button -->
+      <button class="btn-small" id="openSettingsBtn">Configurações</button>
+      <!-- NEW: admin panel toggle button (only visible for admin accounts via JS) -->
+      <button class="btn-small" id="toggleAdminPanel" style="display:none">Painel Admin</button>
+
+      <!-- Lucky Game removed -->
+    </div>
+
+    <div class="grid">
+      <div class="shop hidden" id="shop">
+        <!-- persistent controls inside shop when rendered -->
+        <div class="shop-controls" id="shopControls" style="display:none">
+          <input id="shopSearch" placeholder="Pesquisar jogos..." aria-label="Pesquisar jogos" />
+        </div>
+
+        <!-- NEW: 3D obsidian block preview -->
+        <div id="obsidian3d" style="width:100%;height:220px;border-radius:6px;overflow:hidden;margin-bottom:10px;background:#000;display:flex;align-items:center;justify-content:center">
+          <!-- canvas will be injected by obsidian-block.js -->
+        </div>
+      </div>
+      <!-- NEW: pet shop container -->
+      <div class="shop hidden" id="petShop"></div>
+      <!-- NEW: mutation shop container -->
+      <div class="shop hidden" id="mutationShop"></div>
+      <aside class="panel">
+        <h2 id="statsTitle">Estatísticas</h2>
+        <div class="stats" id="stats">
+          <div class="stat"><div id="label-money">Dinheiro</div><div id="money">R$ 100,00</div></div>
+          <div class="stat"><div id="label-income">Renda / s</div><div id="income">R$ 0,00</div></div>
+          <div class="stat"><div id="label-playtime">Tempo jogado</div><div id="playtime">0s</div></div>
+          <div class="stat"><div id="label-spent">Total gasto</div><div id="spent">R$ 0,00</div></div>
+          <div class="stat"><div id="label-bought">Jogos comprados</div><div id="boughtCount">0</div></div>
+          <div class="stat"><div id="label-rebirths">Renascimentos</div><div id="rebirths">0</div></div>
+          <div class="stat"><div id="label-mult">Multiplicador</div><div id="multiplier">x1</div></div>
+        </div>
+        <h2 id="leaderboardTitle">Top Global</h2>
+        <div id="leaderboard" class="leaderboard"></div>
+
+        <!-- Admin panel (only visible for specific admin accounts via JS) -->
+        <div id="adminPanel" class="admin-panel" style="display:none">
+          <h2>Painel Admin</h2>
+          <div class="admin-content">
+            <div>Conta atual: <span id="adminAccountName">-</span></div>
+            <div>Dinheiro atual: <span id="adminMoney">-</span></div>
+          </div>
+          <div class="admin-actions">
+            <button id="adminAddMoney" class="btn-small">+ R$ 1.000.000</button>
+            <div style="margin-top:6px;display:flex;gap:4px;align-items:center">
+              <input id="adminSetMoneyValue" type="number" placeholder="Definir dinheiro" style="flex:1;padding:4px;border-radius:4px;border:2px solid var(--accent);background:#000;color:var(--text);font-size:11px">
+              <button id="adminSetMoney" class="btn-small">Aplicar</button>
+            </div>
+            <button id="adminClearLeaderboard" class="btn-small" style="margin-top:6px;border-color:var(--red)">Zerar Top Global</button>
+            <!-- NEW: extra admin controls -->
+            <button id="adminAddRebirths" class="btn-small" style="margin-top:6px">+10 Renascimentos</button>
+            <button id="adminGivePets" class="btn-small">Dar 1 Pet de Cada</button>
+            <!-- NEW: admin complete index button -->
+            <button id="adminCompleteIndex" class="btn-small" style="margin-top:6px">Completar Índice</button>
+            <button id="adminResetGame" class="btn-small" style="border-color:var(--red)">Resetar Jogo</button>
+
+            <!-- NEW: give games to an account -->
+            <div style="margin-top:8px;border-top:1px dashed rgba(255,255,255,0.06);padding-top:8px;display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:12px;color:var(--muted)">Dar jogo para conta</div>
+              <input id="adminTargetAccount" placeholder="Nome da conta (ex: YokaiOwner)" style="padding:6px;border-radius:4px;border:2px solid var(--text);background:#000;color:var(--text);font-size:13px">
+              <select id="adminSelectItem" style="padding:6px;border-radius:4px;border:2px solid var(--text);background:#000;color:var(--text);font-size:13px"></select>
+              <input id="adminItemQty" type="number" min="1" value="1" style="padding:6px;border-radius:4px;border:2px solid var(--text);background:#000;color:var(--text);font-size:13px">
+              <button id="adminGiveItem" class="btn-small">Dar jogo</button>
+              <div id="adminGiveMsg" style="font-size:12px;color:var(--muted)"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          <button class="btn-small" id="reset">Reiniciar</button>
+          <button class="btn-small" id="rebirth">Renascimento (R$ 750.000)</button>
+          <!-- moved code redeem button next to the Index button -->
+          <button class="btn-small" id="redeemCodeBtn">Inserir Código</button>
+          <button class="btn-small" id="indexBtn">Índice</button>
+          <div class="credits" id="credits">Spiral Square UPD - V 1.10</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Account overlay -->
+  <div id="accountOverlay" class="account-overlay hidden">
+    <div class="account-card">
+      <h2 class="account-title">Criar conta</h2>
+      <form id="accountForm" autocomplete="off">
+        <label class="account-label">
+          Nome
+          <input id="accountName" name="name" type="text" required minlength="3" maxlength="20" />
+        </label>
+        <label class="account-label">
+          Senha
+          <input id="accountPassword" name="password" type="password" required minlength="4" maxlength="24" />
+        </label>
+        <label class="account-label">
+          Gênero
+          <select id="accountGender" name="gender" required>
+            <option value="" disabled selected>Selecione</option>
+            <option value="masculino">Masculino</option>
+            <option value="feminino">Feminino</option>
+            <option value="outro">Outro</option>
+          </select>
+        </label>
+        <button type="submit" class="btn-small account-submit">Entrar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Index overlay -->
+  <div id="indexOverlay" class="account-overlay hidden">
+    <div class="account-card" style="max-width:420px">
+      <h2 class="account-title" id="indexTitle">Índice</h2>
+      <div id="indexContent" style="color:var(--text);font-size:14px">
+        <!-- populated by JS -->
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="claimIndexBtn" class="btn-small">Receber Indexaria</button>
+        <button id="closeIndexBtn" class="btn-small">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Workaround for "PerformanceServerTiming object could not be cloned" errors
+    // in this environment: disable PerformanceObserver so nothing tries to post
+    // uncloneable performance entries via postMessage.
+    try {
+      window.PerformanceObserver = undefined;
+    } catch (e) {
+      // ignore
+    }
+  </script>
+  <!-- NEW: background music audio elements -->
+  <audio id="bgMusic" src="retro_music.mp3" loop></audio>
+
+  <!-- Settings overlay (music + game-voice toggles) -->
+  <div id="settingsOverlay" class="account-overlay hidden">
+    <div class="account-card" style="max-width:360px">
+      <h2 class="account-title">Configurações</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;color:var(--text);font-size:14px">
+        <label style="display:flex;justify-content:space-between;align-items:center">
+          <span>Música</span>
+          <input id="settingsMusicToggle" type="checkbox" />
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center">
+          <span>Som dos jogos</span>
+          <input id="settingsSpeechToggle" type="checkbox" />
+        </label>
+        <div style="font-size:12px;color:var(--muted)">Som dos jogos: voz masculina dizendo o nome do jogo; pode ser desativado aqui.</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+        <button id="closeSettingsBtn" class="btn-small">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://esm.sh/three@0.164.0"
+    }
+  }
+  </script>
+
